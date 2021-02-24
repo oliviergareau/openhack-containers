@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: userjava-deployment
+  namespace: api
+  labels:
+    deploy: userjava
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: userjava
+  template:
+    metadata:
+      labels:
+        app: userjava
+    spec:
+      containers:
+      - image: "registrynmp2539.azurecr.io/t1/user-java:1"
+        imagePullPolicy: Always
+        name: userjava
+        livenessProbe:
+          httpGet:
+            path: /api/user-java/healthcheck
+            port: 80
+          initialDelaySeconds: 10
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /api/user-java/healthcheck
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        ports:
+          - containerPort: 80
+            name: http
+            protocol: TCP
+          - containerPort: 443
+            name: https
+            protocol: TCP
+        envFrom:
+          - secretRef:
+              name: sql
+ 
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: userjava
+  namespace: api
+spec:
+  type: ClusterIP
+  selector:
+    app: userjava
+  ports:
+    - protocol: TCP
+      name: userjava-http
+      port: 80
+      targetPort: 80
+    - protocol: TCP
+      name: userjava-https
+      port: 443
+      targetPort: 443
